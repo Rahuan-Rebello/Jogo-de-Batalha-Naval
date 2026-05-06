@@ -1,0 +1,26 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "contributors": [],
+  "contributorsSortAlphabetically": true,
+  "badgeTemplate": "[![All Contributors](https://img.shields.io/badge/all_contributors-<%= contributors.length %>-orange.svg?style=flat-square)](#contributors-)",
+  "commitConvention": "angular",
+  "skipCi": true,
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "projectName": "Jogo-de-Truco",
+  "projectOwner": "Rahuan-Rebello",
+  "commitType": "docs",
+  "isBot": true,
+  "contributions": [
+    "code",
+    "doc",
+    "test",
+    "bug",
+    "design",
+    "ideas"
+  ]
+}
