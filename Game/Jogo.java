@@ -1,79 +1,93 @@
-import java.util.Scanner;
+import java.io.*;
 import java.util.Random;
+import java.util.Scanner;
 
-public class Jogo {
-    private Tabuleiro tabuleiroJogador;
-    private Tabuleiro tabuleiroComputador;
-    private Scanner leitor;
-    private Random random;
-
-    public Jogo() {
-        tabuleiroJogador = new Tabuleiro();
-        tabuleiroComputador = new Tabuleiro();
-        leitor = new Scanner(System.in);
-        random = new Random();
-    }
-
-    public void iniciar() {
-        System.out.println("🚢 BEM-VINDO À BATALHA NAVAL!");
-        
-        // Configuração inicial (3 navios para cada)
-        configurarNavios(tabuleiroJogador);
-        configurarNavios(tabuleiroComputador);
-
-        boolean jogoAtivo = true;
-        while (jogoAtivo) {
-            turnoDoJogador();
-            if (!tabuleiroComputador.temNaviosVivos()) {
-                System.out.println("🏆 PARABÉNS! Você afundou a frota inimiga!");
-                break;
-            }
-
-            turnoDoComputador();
-            if (!tabuleiroJogador.temNaviosVivos()) {
-                System.out.println("💀 GAME OVER! O computador venceu.");
-                break;
-            }
-        }
-    }
-
-    private void configurarNavios(Tabuleiro t) {
-        t.posicionarNavioAleatorio(new Navio("Contratorpedeiro", 3));
-        t.posicionarNavioAleatorio(new Navio("Submarino", 2));
-        t.posicionarNavioAleatorio(new Navio("Porta-Aviões", 4));
-    }
-
-    private void turnoDoJogador() {
-        System.out.println("\n--- SEU TURNO ---");
-        System.out.println("Tabuleiro Inimigo:");
-        tabuleiroComputador.exibir(true);
-
-        int linha, coluna;
-        do {
-            System.out.print("Digite a linha (0-9): ");
-            linha = leitor.nextInt();
-            System.out.print("Digite a coluna (0-9): ");
-            coluna = leitor.nextInt();
-        } while (linha < 0 || linha > 9 || coluna < 0 || coluna > 9);
-
-        if (tabuleiroComputador.receberTiro(linha, coluna)) {
-            System.out.println("💥 FOGO! Você acertou um navio!");
-        } else {
-            System.out.println("💦 ÁGUA! Nada por aqui.");
-        }
-    }
-
-    private void turnoDoComputador() {
-        System.out.println("\n--- TURNO DO COMPUTADOR ---");
-        int linha = random.nextInt(10);
-        int coluna = random.nextInt(10);
-
-        if (tabuleiroJogador.receberTiro(linha, coluna)) {
-            System.out.printf("🔥 O computador acertou sua posição [%d, %d]!\n", linha, coluna);
-        } else {
-            System.out.printf("💨 O computador disparou em [%d, %d] e errou.\n", linha, coluna);
-        }
-        tabuleiroJogador.exibir(false);
-    }
-} 
+public class Jogo implements Serializable {
+    private Jogador humano;
+    private Jogador bot;
+    private Tabuleiro tabBot;
+    private Tabuleiro tabHumano;
     
+    public Jogo(String nomeJogador) {
+        this.humano = new Jogador(nomeJogador);
+        this.bot = new Jogador("Computador (Bot)");
+        this.tabBot = new Tabuleiro();
+        this.tabHumano = new Tabuleiro();
+        
+        this.tabBot.configurarFrota();
+        this.tabHumano.configurarFrota();
+    }
+
+    public void iniciarPartida() {
+        Scanner sc = new Scanner(System.in);
+        Random random = new Random();
+        boolean jogoRolando = true;
+
+        System.out.println("\n=== BATALHA NAVAL: " + humano.getNome() + " VS " + bot.getNome() + " ===");
+
+        while (jogoRolando) {
+            // 1. TURNO DO JOGADOR
+            System.out.println("\n--- MAPA DO INIMIGO ---");
+            tabBot.exibir(true);
+            
+            System.out.print("\nSua vez, Capitão! Digite a LINHA e COLUNA para atirar (ex: 5 10): ");
+            int linha = sc.nextInt();
+            int coluna = sc.nextInt();
+
+            if (tabBot.jaFoiAtacado(linha, coluna)) {
+                System.out.println("Você já atirou aí! Perdeu a vez por desatenção.");
+            } else {
+                boolean acertou = tabBot.receberTiro(linha, coluna, true);
+                if (acertou) {
+                    System.out.println("FOGO! Você acertou uma embarcação inimiga!");
+                    humano.registrarAcerto();
+                } else {
+                    System.out.println("ÁGUA! Tiro passou longe.");
+                }
+            }
+
+            // Checa vitória do Humano
+            if (humano.getAbates() >= 5) {
+                System.out.println("\nPARABÉNS! Você afundou 5 embarcações e venceu a guerra!");
+                jogoRolando = false;
+                break;
+            }
+
+            // 2. TURNO DO BOT
+            System.out.println("\n[Bot processando jogada...]");
+            int lBot, cBot;
+            do {
+                lBot = random.nextInt(20);
+                cBot = random.nextInt(20);
+            } while (tabHumano.jaFoiAtacado(lBot, cBot)); // Bot inteligente: não repete tiro
+
+            boolean botAcertou = tabHumano.receberTiro(lBot, cBot, false);
+            System.out.println("O Bot atirou na posição [" + lBot + ", " + cBot + "]");
+            
+            if (botAcertou) {
+                System.out.println("Fomos atingidos!");
+                bot.registrarAcerto();
+            } else {
+                System.out.println("O Bot errou e acertou a água.");
+            }
+
+            // Checa vitória do Bot
+            if (bot.getAbates() >= 5) {
+                System.out.println("\nGAME OVER! O computador destruiu sua frota.");
+                jogoRolando = false;
+                break;
+            }
+
+            // 3. SALVAR CHECKPOINT
+            salvarJogo();
+        }
+    }
+
+    private void salvarJogo() {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("save_vs_bot.dat"))) {
+            oos.writeObject(this);
+        } catch (Exception e) {
+            System.out.println("Erro ao salvar checkpoint.");
+        }
+    }
+}

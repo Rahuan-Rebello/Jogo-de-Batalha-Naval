@@ -1,88 +1,87 @@
+import java.io.Serializable;
 import java.util.Random;
 
-public class Tabuleiro {
-    private char[][] grade;
-    private final int TAMANHO = 10;
-    private final char AGUA = '~';
-    private final char NAVIO = 'N';
-    private final char ERRO = 'O';
-    private final char ACERTO = 'X';
+public class Tabuleiro implements Serializable {
+    private char[][] mapaInterno;
+    private char[][] mapaVisivel;
+    private final int TAMANHO = 20;
 
     public Tabuleiro() {
-        grade = new char[TAMANHO][TAMANHO];
-        inicializarTabuleiro();
-    }
-
-    private void inicializarTabuleiro() {
+        mapaInterno = new char[TAMANHO][TAMANHO];
+        mapaVisivel = new char[TAMANHO][TAMANHO];
         for (int i = 0; i < TAMANHO; i++) {
             for (int j = 0; j < TAMANHO; j++) {
-                grade[i][j] = AGUA;
+                mapaInterno[i][j] = 'V';
+                mapaVisivel[i][j] = 'O';
             }
         }
     }
 
-    public void exibir(boolean esconderNavios) {
-        System.out.println("\n  0 1 2 3 4 5 6 7 8 9");
-        for (int i = 0; i < TAMANHO; i++) {
-            System.out.print(i + " ");
-            for (int j = 0; j < TAMANHO; j++) {
-                char charAtual = grade[i][j];
-                if (esconderNavios && charAtual == NAVIO) {
-                    System.out.print(AGUA + " ");
-                } else {
-                    System.out.print(charAtual + " ");
+    public void configurarFrota() {
+        posicionarVarios(new PortaAvioes(), 2);
+        posicionarVarios(new Destroyer(), 3);
+        posicionarVarios(new Submarino(), 4);
+        posicionarVarios(new Fragata(), 5);
+        posicionarVarios(new Bote(), 6);
+    }
+
+    private void posicionarVarios(Navio tipo, int qtd) {
+        Random r = new Random();
+        for (int i = 0; i < qtd; i++) {
+            boolean posicionado = false;
+            while (!posicionado) {
+                int l = r.nextInt(TAMANHO), c = r.nextInt(TAMANHO), dir = r.nextInt(3);
+                if (podePosicionar(l, c, tipo.getTamanho(), dir)) {
+                    for (int j = 0; j < tipo.getTamanho(); j++) {
+                        int nl = l, nc = c;
+                        if (dir == 0) nc += j; else if (dir == 1) nl += j; else { nl += j; nc += j; }
+                        mapaInterno[nl][nc] = tipo.getSimbolo();
+                    }
+                    posicionado = true;
                 }
             }
-            System.out.println();
         }
     }
 
-    public void posicionarNavioAleatorio(Navio navio) {
-        Random random = new Random();
-        boolean posicionado = false;
-
-        while (!posicionado) {
-            int linha = random.nextInt(TAMANHO);
-            int coluna = random.nextInt(TAMANHO);
-            boolean horizontal = random.nextBoolean();
-
-            if (podePosicionar(linha, coluna, navio.getTamanho(), horizontal)) {
-                for (int i = 0; i < navio.getTamanho(); i++) {
-                    if (horizontal) grade[linha][coluna + i] = NAVIO;
-                    else grade[linha + i][coluna] = NAVIO;
+    private boolean podePosicionar(int l, int c, int tam, int dir) {
+        for (int i = 0; i < tam; i++) {
+            int nl = l, nc = c;
+            if (dir == 0) nc += i; else if (dir == 1) nl += i; else { nl += i; nc += i; }
+              
+            if (nl < 0 || nl >= TAMANHO || nc < 0 || nc >= TAMANHO || mapaInterno[nl][nc] != 'V') return false;
+            
+            for (int x = -1; x <= 1; x++) {
+                for (int y = -1; y <= 1; y++) {
+                    int al = nl + x, ac = nc + y;
+                    if (al >= 0 && al < TAMANHO && ac >= 0 && ac < TAMANHO && mapaInterno[al][ac] != 'V') return false;
                 }
-                posicionado = true;
             }
-        }
-    }
-
-    private boolean podePosicionar(int linha, int coluna, int tamanho, boolean horizontal) {
-        if (horizontal) {
-            if (coluna + tamanho > TAMANHO) return false;
-            for (int i = 0; i < tamanho; i++) if (grade[linha][coluna + i] != AGUA) return false;
-        } else {
-            if (linha + tamanho > TAMANHO) return false;
-            for (int i = 0; i < tamanho; i++) if (grade[linha + i][coluna] != AGUA) return false;
         }
         return true;
     }
 
-    public boolean receberTiro(int linha, int coluna) {
-        if (grade[linha][coluna] == NAVIO) {
-            grade[linha][coluna] = ACERTO;
+    public boolean jaFoiAtacado(int l, int c) {
+        return mapaVisivel[l][c] == '~' || mapaVisivel[l][c] == 'X' || mapaVisivel[l][c] == 'Y';
+    }
+
+    public boolean receberTiro(int l, int c, boolean ataqueDoJogador) {
+        if (mapaInterno[l][c] != 'V') {
+            mapaVisivel[l][c] = ataqueDoJogador ? 'X' : 'Y';
+            mapaInterno[l][c] = 'X';
             return true;
-        } else if (grade[linha][coluna] == AGUA) {
-            grade[linha][coluna] = ERRO;
         }
+        mapaVisivel[l][c] = '~';
         return false;
     }
 
-    public boolean temNaviosVivos() {
+    public void exibir(boolean esconderNavios) {
+        System.out.println("   00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19");
         for (int i = 0; i < TAMANHO; i++) {
+            System.out.printf("%02d ", i);
             for (int j = 0; j < TAMANHO; j++) {
-                if (grade[i][j] == NAVIO) return true;
+                System.out.print(mapaVisivel[i][j] + "  ");
             }
+            System.out.println();
         }
-        return false;
     }
 }
