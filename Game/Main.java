@@ -4,11 +4,24 @@ import java.io.*;
 public class Main {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
-        System.out.println("1 - Iniciar Nova Guerra");
-        System.out.println("2 - Carregar Jogo Salvo");
-        System.out.print("Opção: ");
-        int opcao = sc.nextInt();
-        sc.nextLine();
+
+        int opcao = -1;
+
+        while(true) {
+            try {
+                System.out.println("1 - Iniciar Nova Guerra");
+                System.out.println("2 - Carregar Jogo Salvo");
+                System.out.print("Opção: ");
+                opcao = sc.nextInt();
+                sc.nextLine();
+                if (opcao == 1 || opcao == 2) break;
+                else {System.out.println("Digite uma opção válida!");}
+            }
+            catch (Exception e) {
+                System.out.println("Digite apenas 1 ou 2 para selecionar uma opção!");
+                sc.nextLine();
+            }
+        }
 
         if (opcao == 2) {
             try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream("save_vs_bot.dat"))) {
