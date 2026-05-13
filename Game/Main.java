@@ -8,6 +8,7 @@ public class Main {
         System.out.println("2 - Carregar Jogo Salvo");
         System.out.print("Opção: ");
         int opcao = sc.nextInt();
+        sc.nextLine();
 
         if (opcao == 2) {
             try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream("save_vs_bot.dat"))) {
@@ -19,7 +20,7 @@ public class Main {
             }
         } else {
             System.out.print("Digite seu nome, Comandante: ");
-            String nome = sc.next();
+            String nome = sc.nextLine();
             Jogo novoJogo = new Jogo(nome);
             novoJogo.iniciarPartida();
         }

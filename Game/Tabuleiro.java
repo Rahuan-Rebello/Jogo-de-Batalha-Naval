@@ -61,18 +61,22 @@ public class Tabuleiro implements Serializable {
     }
 
     public boolean jaFoiAtacado(int l, int c) {
-        return mapaVisivel[l][c] == '~' || mapaVisivel[l][c] == 'X' || mapaVisivel[l][c] == 'Y';
+        return mapaVisivel[l][c] == '~' || mapaVisivel[l][c] == 'X' || mapaVisivel[l][c] == 'Y' || mapaVisivel[l][c] == '#';
     }
 
-    public boolean receberTiro(int l, int c, boolean ataqueDoJogador) {
-        if (mapaInterno[l][c] != 'V') {
-            mapaVisivel[l][c] = ataqueDoJogador ? 'X' : 'Y';
-            mapaInterno[l][c] = 'X';
-            return true;
-        }
-        mapaVisivel[l][c] = '~';
-        return false;
+   public boolean receberTiro(int l, int c, boolean ataqueDoJogador) {
+    if (mapaInterno[l][c] != 'V' && mapaInterno[l][c] != 'X') {
+        char simboloOriginal = mapaInterno[l][c];
+
+        afundarNavioEspecifico(l, c, simboloOriginal);
+
+        mapaVisivel[l][c] = ataqueDoJogador ? 'X' : 'Y';
+        
+        return true;
     }
+    mapaVisivel[l][c] = '~';
+    return false;
+}
 
     public void exibir(boolean esconderNavios) {
         System.out.println("   00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19");
@@ -84,4 +88,22 @@ public class Tabuleiro implements Serializable {
             System.out.println();
         }
     }
+
+    private void afundarNavioEspecifico(int l, int c, char simbolo) {
+        if (l < 0 || l >= TAMANHO || c < 0 || c >= TAMANHO || mapaInterno[l][c] != simbolo) {
+            return;
+        }
+
+        mapaInterno[l][c] = 'X';
+
+        mapaVisivel[l][c] = '#';
+
+        for (int x = -1; x <= 1; x++) {
+            for (int y = -1; y <= 1; y++) {
+                if (x != 0 || y != 0) {
+                    afundarNavioEspecifico(l + x, c + y, simbolo);
+                }
+            }
+        }
+}
 }

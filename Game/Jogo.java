@@ -26,13 +26,29 @@ public class Jogo implements Serializable {
         System.out.println("\n=== BATALHA NAVAL: " + humano.getNome() + " VS " + bot.getNome() + " ===");
 
         while (jogoRolando) {
-            // 1. TURNO DO JOGADOR
             System.out.println("\n--- MAPA DO INIMIGO ---");
             tabBot.exibir(true);
             
-            System.out.print("\nSua vez, Capitão! Digite a LINHA e COLUNA para atirar (ex: 5 10): ");
-            int linha = sc.nextInt();
-            int coluna = sc.nextInt();
+            int linha = -1;
+            int coluna = -1;
+
+            while (true) {
+                try {
+                    System.out.printf("\nSua vez, Capitão %s! Digite a LINHA e COLUNA (0 a 19): ", humano.getNome());
+                    
+                    linha = sc.nextInt();
+                    coluna = sc.nextInt();
+
+                    if (linha >= 0 && linha < 20 && coluna >= 0 && coluna < 20) {
+                        break;
+                    } else {
+                        System.out.println("Coordenadas fora do mapa! Tente valores entre 0 e 19.");
+                    }
+                } catch (Exception e) {
+                    System.out.println("Entrada inválida! Por favor, digite apenas números inteiros.");
+                    sc.nextLine();
+                }
+            }
 
             if (tabBot.jaFoiAtacado(linha, coluna)) {
                 System.out.println("Você já atirou aí! Perdeu a vez por desatenção.");
@@ -41,25 +57,24 @@ public class Jogo implements Serializable {
                 if (acertou) {
                     System.out.println("FOGO! Você acertou uma embarcação inimiga!");
                     humano.registrarAcerto();
+                    System.out.println("Você abateu " + humano.getAbates() + " embarcações.");
                 } else {
                     System.out.println("ÁGUA! Tiro passou longe.");
                 }
             }
 
-            // Checa vitória do Humano
             if (humano.getAbates() >= 5) {
-                System.out.println("\nPARABÉNS! Você afundou 5 embarcações e venceu a guerra!");
+                System.out.printf("\nPARABÉNS %s! Você afundou 5 embarcações e venceu a guerra! \n", humano.getNome());
                 jogoRolando = false;
                 break;
             }
 
-            // 2. TURNO DO BOT
             System.out.println("\n[Bot processando jogada...]");
             int lBot, cBot;
             do {
                 lBot = random.nextInt(20);
                 cBot = random.nextInt(20);
-            } while (tabHumano.jaFoiAtacado(lBot, cBot)); // Bot inteligente: não repete tiro
+            } while (tabHumano.jaFoiAtacado(lBot, cBot));
 
             boolean botAcertou = tabHumano.receberTiro(lBot, cBot, false);
             System.out.println("O Bot atirou na posição [" + lBot + ", " + cBot + "]");
@@ -67,8 +82,10 @@ public class Jogo implements Serializable {
             if (botAcertou) {
                 System.out.println("Fomos atingidos!");
                 bot.registrarAcerto();
+                System.out.println("O bot abateu " + bot.getAbates() + " embarcações.");
             } else {
                 System.out.println("O Bot errou e acertou a água.");
+                System.out.println("O bot abateu " + bot.getAbates() + " embarcações.");
             }
 
             // Checa vitória do Bot
@@ -78,7 +95,6 @@ public class Jogo implements Serializable {
                 break;
             }
 
-            // 3. SALVAR CHECKPOINT
             salvarJogo();
         }
     }
